@@ -3,7 +3,7 @@
 -- Departamento de Ciencias de la Computación e I.A.
 -- Universidad de Sevilla
 -- =====================================================================
-
+-- EDIT
 -- ---------------------------------------------------------------------
 -- Introducción                                                       --
 -- ---------------------------------------------------------------------
@@ -207,4 +207,3 @@ prop_ordenDe196 (Positive n) = ordenMayor 196 n
 -- λ> quickCheck prop_ordenDe196
 -- +++ OK, passed 100 tests.
  
-
