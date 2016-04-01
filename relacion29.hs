@@ -112,7 +112,8 @@ orden x | esCapicua x = 0
 -- ---------------------------------------------------------------------
 
 ordenMayor :: Integer -> Integer -> Bool
-ordenMayor x n = undefined
+ordenMayor x 0 = True
+ordenMayor x n = not (esCapicua x) && ordenMayor (siguiente x) (n-1)
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 8. Definir la función
@@ -123,7 +124,10 @@ ordenMayor x n = undefined
 -- ---------------------------------------------------------------------
 
 ordenEntre :: Integer -> Integer -> [Integer]
-ordenEntre m n = filter (\x -> orden x `elem` [m..n-1]) [1..]
+ordenEntre m n = filter (\x -> ordenMayor x m && ordenMenor x n) [1..]
+  where ordenMenor :: Integer -> Integer -> Bool
+        ordenMenor _ 0 = False
+        ordenMenor x n = esCapicua x || ordenMenor (siguiente x) (n-1)
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 9. Definir la función
@@ -135,7 +139,7 @@ ordenEntre m n = filter (\x -> orden x `elem` [m..n-1]) [1..]
 -- ---------------------------------------------------------------------
 
 menorDeOrdenMayor :: Integer -> Integer
-menorDeOrdenMayor n = undefined
+menorDeOrdenMayor n = head [x | x <- [1..], ordenMayor x n]
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 10. Definir la función 
@@ -146,42 +150,61 @@ menorDeOrdenMayor n = undefined
 --    menoresdDeOrdenMayor 5  ==  [(1,10),(2,19),(3,59),(4,69),(5,79)]
 -- ---------------------------------------------------------------------
 
-menoresdDeOrdenMayor :: Integer -> [(Integer,Integer)]
-menoresdDeOrdenMayor m = undefined
+menoresDeOrdenMayor :: Integer -> [(Integer,Integer)]
+menoresDeOrdenMayor m = busca [1..m] [1..]
+  where busca :: [Integer]-> [Integer] -> [(Integer,Integer)]
+        busca []     _  = []
+        busca (n:ns) xs =  (n, head zs) : busca ns zs
+          where zs = dropWhile (\x -> not $ ordenMayor x n) xs
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 11. A la vista de los resultados de (menoresdDeOrdenMayor 5)
 -- conjeturar sobre la última cifra de menorDeOrdenMayor.
 -- ---------------------------------------------------------------------
-
+-- ¿0 o 9?
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 12. Decidir con QuickCheck la conjetura.
 -- ---------------------------------------------------------------------
 
 -- La conjetura es
-prop_menorDeOrdenMayor :: Integer -> Property
-prop_menorDeOrdenMayor n = undefined
+prop_menorDeOrdenMayor :: (Positive Integer) -> Bool
+prop_menorDeOrdenMayor (Positive n) = 
+  all (\x -> x == 0 || x == 9) $ map (`mod` 10) $ map snd $
+      menoresDeOrdenMayor n
 
 -- La comprobación es
+-- *** Failed! Falsifiable (after 30 tests and 1 shrink): 
+-- Positive {getPositive = 25}
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 13. Calcular (menoresdDeOrdenMayor 50)
 -- ---------------------------------------------------------------------
 
 -- Solución: El cálculo es
+{- [(1,10),(2,19),(3,59),(4,69),(5,79),(6,79),(7,89),(8,89),(9,89),
+   (10,89),(11,89),(12,89),(13,89),(14,89),(15,89),(16,89),(17,89),
+   (18,89),(19,89),(20,89),(21,89),(22,89),(23,89),(24,89),(25,196),
+   (26,196),(27,196),(28,196),(29,196),(30,196),(31,196),(32,196),
+   (33,196),(34,196),(35,196),(36,196),(37,196),(38,196),(39,196),
+   (40,196),(41,196),(42,196),(43,196),(44,196),(45,196),(46,196),
+   (47,196),(48,196),(49,196),(50,196)] -}
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 14. A la vista de (menoresdDeOrdenMayor 50), conjeturar el
 -- orden de 196. 
 -- ---------------------------------------------------------------------
-
+-- ¿Primer número de Lychrel?
 -- ---------------------------------------------------------------------
 -- Ejercicio 15. Comprobar con QuickCheck la conjetura sobre el orden de
 -- 196. 
 -- ---------------------------------------------------------------------
 
 -- La propiedad es
-prop_ordenDe196 n = undefined
+prop_ordenDe196 (Positive n) = ordenMayor 196 n
 
 -- La comprobación es
+-- λ> quickCheck prop_ordenDe196
+-- +++ OK, passed 100 tests.
+ 
+
