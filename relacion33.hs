@@ -66,7 +66,7 @@ creaPolDispersa xs = creaPolDensa (zip ys xs)
 -- ---------------------------------------------------------------------
 
 creaPolDensa :: (Num a, Eq a) => [(Int,a)] -> Polinomio a
-creaPolDensa = foldr (\(n,a) p -> consPol n a p) polCero
+creaPolDensa = foldr (uncurry consPol) polCero
 
 -- ---------------------------------------------------------------------
 -- Nota. En el resto de la sucesión se usará en los ejemplos los
@@ -162,7 +162,7 @@ coeficientes = dispersa
 -- ---------------------------------------------------------------------
 
 potencia :: (Num a, Eq a) => Polinomio a -> Int -> Polinomio a
-potencia = undefined
+potencia p n = foldr1 multPol (replicate n p)
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 9. Mejorar la definición de potencia definiendo la función
@@ -178,7 +178,11 @@ potencia = undefined
 -- ---------------------------------------------------------------------
 
 potenciaM :: (Num a, Eq a) => Polinomio a -> Int -> Polinomio a
-potenciaM = undefined
+potenciaM p 1 = p
+potenciaM p n | even n = potenciaM p2 n2
+              | otherwise = p `multPol` potenciaM p2 n2
+  where p2 = p `multPol` p
+        n2 = n `div` 2                         
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 10. Definir la función
@@ -208,13 +212,10 @@ integral = creaPolDensa .
 --    35 % 12
 -- ---------------------------------------------------------------------
 
---integralDef :: (Fractional t, Eq t) => Polinomio t -> t -> t -> t    
---integralDef p a b = sustituye a b .
---                    map (\(a,b) -> (a+1,b/fromIntegral(a+1))) . 
---                    densa
---sustituye :: 
-sustituye a b xs = foldr (\(n,x) s -> x*(b**n) + s) 0 xs -
-                   foldr (\(n,x) s -> a*(b**n) + s) 0 xs
+integralDef :: (Fractional t, Eq t) => Polinomio t -> t -> t -> t    
+integralDef p a b = valor primitiva b - valor primitiva a
+  where primitiva = integral p
+
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 12. Definir la función
@@ -244,8 +245,18 @@ multEscalar c p | esPolCero p = polCero
 --    cociente pol4 pol5  ==  1 % 2*x^2 + (-1) % 6*x + 8 % 9
 -- ---------------------------------------------------------------------
 
-cociente:: (Fractional a, Eq a) => Polinomio a -> Polinomio a -> Polinomio a
-cociente p q = undefined
+cociente:: (Fractional a, Eq a) => Polinomio a ->
+           Polinomio a -> Polinomio a
+cociente p q | n == 0    = multEscalar (1/x) p
+             | m < n     = polCero
+             | otherwise = consPol s z (cociente r q)
+    where x = coefLider p
+          m = grado p
+          y = coefLider q
+          n = grado q
+          s = m-n
+          z = x/y
+          r = restaPol p (multPorTerm (creaTermino s z) q)
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 14. Definir la función
@@ -259,7 +270,7 @@ cociente p q = undefined
 -- ---------------------------------------------------------------------
 
 resto :: (Fractional a, Eq a) => Polinomio a -> Polinomio a -> Polinomio a
-resto p q = undefined
+resto p q = restaPol p (multPol q (cociente p q))
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 15. Definir la función
@@ -275,7 +286,7 @@ resto p q = undefined
 -- ---------------------------------------------------------------------
 
 divisiblePol :: (Fractional a, Eq a) => Polinomio a -> Polinomio a -> Bool
-divisiblePol p q = undefined
+divisiblePol p q = resto p q == polCero
 
 -- ---------------------------------------------------------------------
 -- Ejercicio 16. El método de Horner para calcular el valor de un
@@ -296,7 +307,7 @@ divisiblePol p q = undefined
 --    horner pol1 (3%2) ==  795 % 32
 -- ---------------------------------------------------------------------
 
-horner:: (Num a, Eq a) => Polinomio a -> a -> a
-horner p x = foldr (\(n,b) s -> b*(x^n) + s) 0 (densa p)
+horner :: (Num a, Eq a) => Polinomio a -> a -> a
+horner p x = foldl1 (\a b -> a*x+b) (dispersa p)
 
 
