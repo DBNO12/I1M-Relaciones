@@ -44,14 +44,14 @@ import I1M.PolOperaciones
 
 -- Además de los ejemplos de polinomios (ejPol1, ejPol2 y ejPol3) que se
 -- encuentran en PolOperaciones, usaremos el siguiente ejemplo.
-ejPol1 :: Polinomio Int
-ejPol1 = consPol 4 3 $ consPol 2 (-5) $ consPol 0 3 polCero
+ejPol11 :: Polinomio Int
+ejPol11 = consPol 4 3 $ consPol 2 (-5) $ consPol 0 3 polCero
 
-ejPol2 :: Polinomio Int
-ejPol2 = consPol 5 1 $ consPol 2 5 $ consPol 1 4 polCero
+ejPol12 :: Polinomio Int
+ejPol12 = consPol 5 1 $ consPol 2 5 $ consPol 1 4 polCero
 
-ejPol4 :: Polinomio Int
-ejPol4 = consPol 3 1 
+ejPol14 :: Polinomio Int
+ejPol14 = consPol 3 1 
                  (consPol 2 2 
                           (consPol 1 (-1) 
                                    (consPol 0 (-2) polCero)))
@@ -65,6 +65,7 @@ ejPol4 = consPol 3 1
 -- ---------------------------------------------------------------------
 
 divisores :: Int -> [Int]
+divisores 0 = [0]
 divisores n = xs ++ map (*(-1)) xs
   where xs = 1:[x | x <- [2..n], n `rem` x == 0]
 
@@ -127,6 +128,7 @@ coeficientes p = rastreaCoef [n,n-1..0] p
 -- ---------------------------------------------------------------------
 
 creaPol :: (Num a, Eq a) => [a] -> Polinomio a
+creaPol [] = polCero
 creaPol xs = construye (length xs - 1) xs
   where construye :: (Num a, Eq a) => Int -> [a] -> Polinomio a
         construye k (x:xs) = consPol k x (construye (k-1) xs)
@@ -178,7 +180,7 @@ pRuffini n (x:xs) = x: ruffini n xs x
 --     cocienteRuffini 3 ejPol4    == x^2 + 5*x + 14
 -- ---------------------------------------------------------------------
 
---cocienteRuffini:: Int -> Polinomio Int -> Polinomio Int
+cocienteRuffini:: Int -> Polinomio Int -> Polinomio Int
 cocienteRuffini r = creaPol . init . pRuffini r . coeficientes 
 
 -- ---------------------------------------------------------------------
@@ -202,7 +204,9 @@ restoRuffini r = last . pRuffini r . coeficientes
 
 -- La propiedad es
 prop_diviEuclidea:: Int -> Polinomio Int -> Bool
-prop_diviEuclidea r p = undefined
+prop_diviEuclidea r p =
+    p ==  ((cocienteRuffini r p) `multPol`(creaPol [1,-r]))
+          `sumaPol` (consPol 0 (restoRuffini r p) polCero)
 
 -- La comprobación es
 --    ghci> quickCheck prop_diviEuclidea
@@ -232,8 +236,9 @@ esRaizRuffini r p = restoRuffini r p == 0
 -- ---------------------------------------------------------------------
 
 raicesRuffini :: Polinomio Int -> [Int]
-raicesRuffini p = filter (flip esRaizRuffini p) (divisores $
-                                                           terminoIndep p)
+raicesRuffini p = filter (flip esRaizRuffini p)
+                  (divisores $ terminoIndep p)
+                  
 -- ---------------------------------------------------------------------
 -- Ejercicio 13. Definir la función
 --    factorizacion :: Polinomio Int -> [Polinomio Int]
@@ -245,4 +250,10 @@ raicesRuffini p = filter (flip esRaizRuffini p) (divisores $
 -- ---------------------------------------------------------------------
 
 factorizacion :: Polinomio Int -> [Polinomio Int]
-factorizacion = undefined
+factorizacion p | esPolCero p = [polCero]
+                | otherwise   = descompon p (raicesRuffini p)
+  where descompon :: Polinomio Int -> [Int] -> [Polinomio Int]
+        descompon p []     = [p]
+        descompon p (a:as) = q : descompon r as
+          where q = consPol 1 1 $ consPol 0 (-a) polCero
+                r = cocienteRuffini a p
